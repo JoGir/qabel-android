@@ -69,7 +69,7 @@ open class MainContactsPresenter @Inject constructor(private val view: ContactsV
         when (externalAction.requestCode) {
             ContactsRequestCodes.REQUEST_EXPORT_CONTACT -> handleContactExport(externalAction, target)
             ContactsRequestCodes.REQUEST_IMPORT_CONTACT -> handleContactImport(target)
-            else -> warn("Unknown externagit l file action detected!")
+            else -> warn("Unknown external file action detected!")
         }
     }
 
