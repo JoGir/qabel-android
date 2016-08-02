@@ -17,8 +17,10 @@ import com.google.zxing.integration.android.IntentIntegrator
 import de.qabel.core.config.Identity
 import de.qabel.qabelbox.QblBroadcastConstants
 import de.qabel.qabelbox.R
+import de.qabel.qabelbox.chat.dto.SymmetricKey
 import de.qabel.qabelbox.contacts.dagger.ContactsModule
 import de.qabel.qabelbox.contacts.dto.ContactDto
+import de.qabel.qabelbox.contacts.dto.SelectContactAction
 import de.qabel.qabelbox.contacts.view.adapters.ContactsAdapter
 import de.qabel.qabelbox.contacts.view.presenters.ContactsPresenter
 import de.qabel.qabelbox.dagger.components.MainActivityComponent
@@ -37,11 +39,42 @@ import org.jetbrains.anko.ctx
 import org.jetbrains.anko.debug
 import org.jetbrains.anko.onUiThread
 import java.io.File
+import java.net.URL
 import javax.inject.Inject
 
 class ContactsFragment() : ContactsView, BaseFragment(), AnkoLogger, SearchView.OnQueryTextListener {
 
+    companion object {
+        val ARG_TEXT = "TEXT"
+        val ARG_NAME = "NAME"
+        val ARG_URL = "URL"
+        val ARG_KEY = "KEY"
+
+        fun toShareText(text: String): ContactsFragment {
+            val fragment = ContactsFragment()
+            fragment.arguments = with(Bundle()) {
+                putString(ARG_TEXT, text)
+                this
+            }
+            return fragment
+        }
+
+        fun toShareFile(fileName: String, url: URL, key: SymmetricKey): ContactsFragment {
+            val fragment = ContactsFragment()
+            fragment.arguments = with(Bundle()) {
+                putString(ARG_NAME, fileName)
+                putString(ARG_URL, url.toString())
+                //TODO replace key conversion
+                putString(ARG_KEY, key.toString())
+                this
+            }
+            return fragment
+        }
+    }
+
     override var searchString: String? = null
+    override var isMainView: Boolean = true
+    var selectAction: SelectContactAction? = null
 
     var injectCompleted = false
 
@@ -55,10 +88,13 @@ class ContactsFragment() : ContactsView, BaseFragment(), AnkoLogger, SearchView.
     @BindView(R.id.contact_search)
     lateinit var contactSearch: SearchView
 
-    val adapter = ContactsAdapter({ contact ->
-        if (contact.active) navigator.selectChatFragment(contact.contact.keyIdentifier)
-        else navigator.selectContactDetailsFragment(contact);
-    }, { contact ->
+    val adapter = ContactsAdapter({ presenter.onClick(it) }, { presenter.onLongClick(it) })
+
+    override fun startShareDialog(targetFile: File) {
+        ExternalApps.share(activity, Uri.fromFile(targetFile), "application/json")
+    }
+
+    override fun showContactMenu(contact: ContactDto) {
         BottomSheet.Builder(activity).title(contact.contact.alias).sheet(R.menu.bottom_sheet_contactlist).
                 listener({ dialog, which ->
                     when (which) {
@@ -68,23 +104,33 @@ class ContactsFragment() : ContactsView, BaseFragment(), AnkoLogger, SearchView.
                         R.id.contact_list_item_qrcode -> navigator.selectQrCodeFragment(contact.contact)
                         R.id.contact_list_item_send -> presenter.sendContact(contact, activity.externalCacheDir)
                     }
-                }).show();
-        true;
-    });
-
-    override fun startShareDialog(targetFile: File) {
-        ExternalApps.share(activity, Uri.fromFile(targetFile), "application/json");
+                }).show()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        savedInstanceState?.let {
+            if (it.containsKey(ARG_TEXT)) {
+                selectAction = SelectContactAction.ShareTextAction(it.getString(ARG_TEXT))
+                isMainView = false
+            } else if (it.containsKey(ARG_NAME)) {
+                selectAction = SelectContactAction.ShareFileAction(it.getString(ARG_NAME),
+                        URL(it.getString(ARG_URL)), SymmetricKey.Factory.fromHex(it.getString(ARG_KEY)))
+                isMainView = false
+            }
+        }
         val component = getComponent(MainActivityComponent::class.java).plus(ContactsModule(this))
         component.inject(this);
         injectCompleted = true
         presenter.refresh();
 
-        setHasOptionsMenu(true);
-        configureAsMainFragment();
+        if (presenter.isMainView) {
+            setHasOptionsMenu(true);
+            configureAsMainFragment();
+        } else {
+            setHasOptionsMenu(false);
+            configureAsSubFragment();
+        }
 
         contact_list.layoutManager = LinearLayoutManager(view.context);
         contact_list.adapter = adapter;
@@ -170,7 +216,7 @@ class ContactsFragment() : ContactsView, BaseFragment(), AnkoLogger, SearchView.
         }
     }
 
-    override val title: String by lazy { ctx.getString(R.string.Contacts)}
+    override val title: String by lazy { ctx.getString(R.string.Contacts) }
     override val isFabNeeded = true
 
     override fun handleFABAction(): Boolean {
@@ -267,10 +313,18 @@ class ContactsFragment() : ContactsView, BaseFragment(), AnkoLogger, SearchView.
         });
     }
 
-    override fun showContactDeletedMessage(contact : ContactDto){
+    override fun showContactDeletedMessage(contact: ContactDto) {
         showMessage(R.string.dialog_headline_info,
                 R.string.contact_deleted,
                 contact.contact.alias);
+    }
+
+    override fun showConfirmShareMessage(contact: ContactDto) {
+        selectAction?.let {
+            showConfirmation(R.string.ShareToQabelUser, R.string.share_to_confirmation, Unit, {
+                presenter.handleSelectAction(contact, it)
+            })
+        }
     }
 
 }

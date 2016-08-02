@@ -6,11 +6,12 @@ import java.io.File
 
 interface ContactsView {
 
-    var searchString : String?
+    var searchString: String?
+    var isMainView: Boolean
 
     fun showEmpty()
 
-    fun loadData(data : List<ContactDto>)
+    fun loadData(data: List<ContactDto>)
 
     fun startExportFileChooser(filename: String, requestCode: Int)
     fun startImportFileChooser(requestCode: Int)
@@ -27,5 +28,7 @@ interface ContactsView {
 
     fun startQRScan()
 
+    open fun showContactMenu(contact: ContactDto)
+    open fun showConfirmShareMessage(contact: ContactDto)
 }
 

@@ -5,8 +5,10 @@ import dagger.Provides;
 import de.qabel.qabelbox.contacts.interactor.ContactsUseCase;
 import de.qabel.qabelbox.contacts.view.presenters.ContactsPresenter;
 import de.qabel.qabelbox.contacts.view.presenters.MainContactsPresenter;
+import de.qabel.qabelbox.contacts.view.presenters.SelectContactsPresenter;
 import de.qabel.qabelbox.contacts.view.views.ContactsView;
 import de.qabel.qabelbox.dagger.scopes.ActivityScope;
+import de.qabel.qabelbox.navigation.MainNavigator;
 
 @ActivityScope
 @Module
@@ -24,7 +26,11 @@ public class ContactsModule extends ContactBaseModule {
     }
 
     @Provides
-    public ContactsPresenter provideContactsPresenter(ContactsUseCase contactsUseCase) {
-        return new MainContactsPresenter(view, contactsUseCase);
+    public ContactsPresenter provideContactsPresenter(ContactsUseCase contactsUseCase, MainNavigator navigator) {
+        if (view.isMainView()) {
+            return new MainContactsPresenter(view, contactsUseCase, navigator);
+        } else {
+            return new SelectContactsPresenter(view, contactsUseCase, navigator);
+        }
     }
 }

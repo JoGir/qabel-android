@@ -338,6 +338,8 @@ public class MainActivity extends CrashReportingActivity
                         ArrayList<Uri> data = new ArrayList<Uri>();
                         data.add(imageUri);
                         //shareIntoApp(data, intent);
+                    }else if(intent.hasExtra(Intent.EXTRA_TEXT)){
+                        navigator.startShareText(intent.getStringExtra(Intent.EXTRA_TEXT));
                     }
 
                     break;

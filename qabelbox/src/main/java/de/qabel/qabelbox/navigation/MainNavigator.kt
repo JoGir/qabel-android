@@ -119,4 +119,8 @@ constructor(var activity: MainActivity,
         }
     }
 
+    override fun startShareText(text: String) {
+        showFragment(activity, ContactsFragment.toShareText(text), TAG_CONTACT_LIST_FRAGMENT, true, false)
+    }
+
 }

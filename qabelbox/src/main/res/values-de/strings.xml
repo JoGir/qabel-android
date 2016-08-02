@@ -167,6 +167,7 @@
     <string name="fileshare_label_in_chatmessage">Geteilte Datei %1</string>
     <string name="headline_contact_chat">Chat</string>
     <string name="headline_share_select_upload_identity">Identität für Upload auswählen</string>
+    <string name="share_to_confirmation">Mit %s teilen?"></string>
     <string name="cant_send_message">Nachricht konnte nicht gesendet werden</string>
     <string name="cant_import_shared_file">Konnte die geteilte Datei nicht importieren</string>
     <string name="cant_share_contactlist_is_empty">Datei kann nicht geteilt werden. Sie haben keine Kontakte in der Kontaktliste</string>

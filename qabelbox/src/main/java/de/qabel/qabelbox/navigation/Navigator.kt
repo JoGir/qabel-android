@@ -21,4 +21,5 @@ interface Navigator {
     fun selectContactChat(contactKey: String, withIdentity: Identity)
 
     fun selectQrCodeFragment(contact: Contact)
+    open fun startShareText(text: String)
 }

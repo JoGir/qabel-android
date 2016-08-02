@@ -3,10 +3,12 @@ package de.qabel.qabelbox.contacts.view.presenters
 import de.qabel.qabelbox.config.QabelSchema
 import de.qabel.qabelbox.contacts.ContactsRequestCodes
 import de.qabel.qabelbox.contacts.dto.ContactDto
+import de.qabel.qabelbox.contacts.dto.SelectContactAction
 import de.qabel.qabelbox.contacts.interactor.ContactsUseCase
 import de.qabel.qabelbox.contacts.view.views.ContactsView
 import de.qabel.qabelbox.external.ExternalAction
 import de.qabel.qabelbox.external.ExternalFileAction
+import de.qabel.qabelbox.navigation.Navigator
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import org.jetbrains.anko.warn
@@ -14,11 +16,23 @@ import java.io.File
 import java.io.FileDescriptor
 import javax.inject.Inject
 
-class MainContactsPresenter @Inject constructor(private val view: ContactsView,
-                                                private val useCase: ContactsUseCase) : ContactsPresenter, AnkoLogger {
+open class MainContactsPresenter @Inject constructor(private val view: ContactsView,
+                                                     private val useCase: ContactsUseCase,
+                                                     private val navigator: Navigator) : ContactsPresenter, AnkoLogger {
+    override var isMainView: Boolean = true
 
     //TODO Store external action in Bundle
     override var externalAction: ExternalAction? = null;
+
+    override fun onClick(contact: ContactDto) {
+        if (contact.active) navigator.selectChatFragment(contact.contact.keyIdentifier)
+        else navigator.selectContactDetailsFragment(contact);
+    }
+
+    override fun onLongClick(contact: ContactDto): Boolean {
+        view.showContactMenu(contact)
+        return true
+    }
 
     override fun refresh() {
         val search = view.searchString
@@ -55,7 +69,7 @@ class MainContactsPresenter @Inject constructor(private val view: ContactsView,
         when (externalAction.requestCode) {
             ContactsRequestCodes.REQUEST_EXPORT_CONTACT -> handleContactExport(externalAction, target)
             ContactsRequestCodes.REQUEST_IMPORT_CONTACT -> handleContactImport(target)
-            else -> warn("Unknown external file action detected!")
+            else -> warn("Unknown externagit l file action detected!")
         }
     }
 
@@ -114,9 +128,14 @@ class MainContactsPresenter @Inject constructor(private val view: ContactsView,
         view.startImportFileChooser(ContactsRequestCodes.REQUEST_IMPORT_CONTACT);
     }
 
-    override fun startContactImportScan(requestCode : Int){
+    override fun startContactImportScan(requestCode: Int) {
         externalAction = ExternalAction(requestCode, ContactsRequestCodes.REQUEST_IMPORT_CONTACT);
         view.startQRScan();
+    }
+
+    override fun handleSelectAction(contact: ContactDto, action: SelectContactAction) {
+        //TODO
+        throw UnsupportedOperationException()
     }
 
 }
