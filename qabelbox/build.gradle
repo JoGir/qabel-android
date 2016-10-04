@@ -17,13 +17,16 @@ kapt {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.3'
+    compileSdkVersion 24
+    buildToolsVersion '24.0.3'
 
     sourceSets {
         androidTest.java.srcDirs = ['src/androidTest/java', 'src/sharedTest/java']
         test.java.srcDirs = ['src/test/java', 'src/sharedTest/java']
         debug.java.srcDirs += 'src/sharedTest/java'
+        main {
+            jniLibs.srcDirs += 'libs'
+        }
     }
 
     compileOptions {
@@ -35,11 +38,12 @@ android {
         maxProcessCount 4
         javaMaxHeapSize "4g"
     }
+
     defaultConfig {
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
         applicationId "de.qabel.qabel"
         minSdkVersion 19
-        targetSdkVersion 23
+        targetSdkVersion 24
         multiDexEnabled true
         /*
         add code to automatically generate version name and code,
@@ -51,9 +55,6 @@ android {
 
         testApplicationId "de.qabel.test"
 
-        ndk {
-            moduleName "curve25519"
-        }
         buildConfigField "String", "ACCOUNT_TYPE", "\"${applicationId}.account\""
         buildConfigField "String", "AUTHORITY", "\"${applicationId}.providers.internal\""
         buildConfigField "String", "INDEX_AUTHORITY", "\"${applicationId}.providers.index\""
@@ -62,8 +63,18 @@ android {
         resValue "string", "account_type", "${applicationId}.account"
         resValue "string", "authority", "${applicationId}.provider"
         resValue "string", "index_authority", "${applicationId}.index"
-    }
 
+
+        externalNativeBuild {
+            cmake {
+                // Passes optional arguments to CMake.
+                arguments "-DANDROID_TOOLCHAIN=clang"
+
+                // Sets a flag to enable format macro constants for the C++ compiler.
+                cppFlags "-D__STDC_FORMAT_MACROS"
+            }
+        }
+    }
     lintOptions {
         checkReleaseBuilds false
         // Or, if you prefer, you can continue to check for errors in release builds,
@@ -101,10 +112,20 @@ android {
 
     productFlavors {
         normal {
+            externalNativeBuild {
+                cmake {
+                    targets "curve25519"
+                }
+            }
         }
 
         developer {
             minSdkVersion 21 // avoid multiDex for faster dev builds
+            externalNativeBuild {
+                cmake {
+                    targets "curve25519"
+                }
+            }
         }
     }
 
@@ -117,19 +138,23 @@ android {
         exclude 'LICENSE.txt'
         exclude 'log4j2.xml'
     }
+
+    externalNativeBuild {
+        cmake { }
+    }
 }
 
 def permissions = [
-    "android.permission.INTERNET",
-    "android.permission.ACCESS_NETWORK_STATE",
-    "android.permission.VIBRATE",
-    "android.permission.READ_SYNC_SETTINGS",
-    "android.permission.WRITE_SYNC_SETTINGS",
-    "android.permission.WRITE_EXTERNAL_STORAGE",
-    "android.permission.READ_EXTERNAL_STORAGE",
-    "android.permission.AUTHENTICATE_ACCOUNTS",
-    "android.permission.READ_PHONE_STATE",
-    "android.permission.READ_CONTACTS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.VIBRATE",
+        "android.permission.READ_SYNC_SETTINGS",
+        "android.permission.WRITE_SYNC_SETTINGS",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.AUTHENTICATE_ACCOUNTS",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.READ_CONTACTS",
 ]
 
 android.applicationVariants.all { variant ->
@@ -270,7 +295,7 @@ dependencies {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }
 
-    testCompile'org.xerial:sqlite-jdbc:3.8.11.2'
+    testCompile 'org.xerial:sqlite-jdbc:3.8.11.2'
     compile group: 'org.apache.httpcomponents', name: 'httpclient-android', version: '4.3.5.1'
 
     kapt 'com.jakewharton:butterknife-compiler:8.0.1'
@@ -287,10 +312,10 @@ dependencies {
      * https://github.com/robolectric/robolectric/issues/1932
      */
     testCompile 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
-    compile 'com.android.support:recyclerview-v7:23.2.1'
-    compile 'com.android.support:appcompat-v7:23.2.1'
-    compile 'com.android.support:design:23.2.1'
-    compile 'com.android.support:cardview-v7:23.2.1'
+    compile 'com.android.support:recyclerview-v7:24.2.1'
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:design:24.2.1'
+    compile 'com.android.support:cardview-v7:24.2.1'
     compile 'org.slf4j:slf4j-android:1.7.12'
     compile 'com.google.code.gson:gson:2.4'
     compile 'org.apache.commons:commons-lang3:3.4'
@@ -358,6 +383,7 @@ dependencies {
     compile 'com.mikepenz:materialdrawer:5.4.0'
     compile group: 'com.googlecode.libphonenumber', name: 'libphonenumber', version: '7.6.0'
 
+    compile 'io.github.rockerhieu:emojicon:1.4.2'
 }
 
 // for integration test of this plugin
